@@ -5,8 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface HolidayJpaRepository extends JpaRepository<HolidayEntity, java.util.UUID> {
+public interface HolidayJpaRepository extends JpaRepository<HolidayEntity, UUID> {
 
     Optional<HolidayEntity> findByHolidayDate(LocalDate date);
 }
