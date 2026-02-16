@@ -63,7 +63,7 @@ public class AvailabilityService {
         for (TimeWindow w : windows) {
             LocalTime slotStart = roundToSlot(w.start, slotMinutes);
             while (slotStart.plusMinutes(blockMinutes).compareTo(w.end) <= 0) {
-                LocalTime slotEnd = slotStart.plusMinutes(durationMin);
+                LocalTime slotEnd = slotStart.plusMinutes(blockMinutes);
                 if (!slotEnd.isAfter(w.end) && !overlapsAny(slotStart, slotEnd, occupied)) {
                     slots.add(slotStart);
                 }
