@@ -9,6 +9,6 @@ import java.util.UUID;
 
 public interface ServiceJpaRepository extends JpaRepository<ServiceEntity, UUID> {
 
-    @Query("SELECT s FROM ServiceEntity s LEFT JOIN FETCH s.options WHERE s.active = true")
+    @Query("SELECT DISTINCT s FROM ServiceEntity s LEFT JOIN FETCH s.options WHERE s.active = true")
     List<ServiceEntity> findByActiveTrue();
 }
