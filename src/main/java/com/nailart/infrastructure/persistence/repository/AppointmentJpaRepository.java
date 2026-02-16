@@ -1,7 +1,9 @@
 package com.nailart.infrastructure.persistence.repository;
 
 import com.nailart.infrastructure.persistence.entity.AppointmentEntity;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
@@ -19,6 +21,7 @@ public interface AppointmentJpaRepository extends JpaRepository<AppointmentEntit
     List<AppointmentEntity> findByEmployeeIdAndAppointmentDateBetweenOrderByAppointmentDateAscStartTimeAsc(
             UUID employeeId, LocalDate start, LocalDate end);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM AppointmentEntity a WHERE a.employee.id = :employeeId AND a.appointmentDate = :date AND a.status = 'CONFIRMED'")
     List<AppointmentEntity> findConfirmedByEmployeeAndDate(UUID employeeId, LocalDate date);
 
