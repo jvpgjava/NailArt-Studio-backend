@@ -13,8 +13,8 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "appointments", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_employee_date_time", 
-                     columnNames = {"employee_id", "appointment_date", "start_time"})
+    @UniqueConstraint(name = "uk_employee_date_time_confirmed", 
+                     columnNames = {"employee_id", "appointment_date", "start_time", "status"})
 })
 @Getter
 @Setter
