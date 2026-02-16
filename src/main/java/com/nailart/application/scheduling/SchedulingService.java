@@ -82,7 +82,7 @@ public class SchedulingService {
         }
 
         Map<String, Object> optionsSnapshot = options.isEmpty() ? null : Map.of(
-                "optionIds", optionIds.stream().map(UUID::toString).toList(),
+                "optionIds", options.stream().map(o -> o.getId().toString()).toList(),
                 "names", options.stream().map(ServiceOptionEntity::getName).toList()
         );
 
