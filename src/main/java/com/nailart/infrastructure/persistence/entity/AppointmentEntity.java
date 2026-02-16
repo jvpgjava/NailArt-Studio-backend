@@ -11,8 +11,13 @@ import java.time.LocalTime;
 import java.util.Map;
 import java.util.UUID;
 
+// Unique constraint includes status to prevent double-booking of CONFIRMED appointments
+// while allowing the same time slot to be reused after cancellation or no-show
 @Entity
-@Table(name = "appointments")
+@Table(name = "appointments", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_employee_date_time_confirmed", 
+                     columnNames = {"employee_id", "appointment_date", "start_time", "status"})
+})
 @Getter
 @Setter
 @NoArgsConstructor

@@ -4,6 +4,7 @@ import com.nailart.domain.AppointmentStatus;
 import com.nailart.infrastructure.persistence.entity.*;
 import com.nailart.infrastructure.persistence.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,7 +98,11 @@ public class SchedulingService {
                 .clientPhone(user.getPhone())
                 .serviceOptionsSnapshot(optionsSnapshot)
                 .build();
-        return appointmentRepo.save(appointment);
+        try {
+            return appointmentRepo.save(appointment);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalStateException("Horário já foi reservado por outra requisição");
+        }
     }
 
     @Transactional
