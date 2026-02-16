@@ -120,7 +120,8 @@ public class AvailabilityService {
 
     private static LocalTime roundToSlot(LocalTime t, int slotMinutes) {
         int min = t.getHour() * 60 + t.getMinute();
-        int rounded = (min / slotMinutes) * slotMinutes;
+        int remainder = min % slotMinutes;
+        int rounded = remainder == 0 ? min : ((min / slotMinutes) + 1) * slotMinutes;
         return LocalTime.of(rounded / 60, rounded % 60);
     }
 
