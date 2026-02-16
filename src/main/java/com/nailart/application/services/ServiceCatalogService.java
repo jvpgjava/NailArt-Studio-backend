@@ -31,8 +31,8 @@ public class ServiceCatalogService {
 
     @Transactional(readOnly = true)
     public ServiceEntity getById(UUID id) {
-        ServiceEntity s = serviceRepo.findById(id).orElseThrow(() -> new NoSuchElementException("Serviço não encontrado"));
-        s.getOptions().size(); // force load options
+        ServiceEntity s = serviceRepo.findByIdWithOptions(id)
+                .orElseThrow(() -> new NoSuchElementException("Serviço não encontrado"));
         return s;
     }
 
