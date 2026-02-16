@@ -40,10 +40,11 @@ public class AvailabilityService {
         // DB: 1=domingo, 7=sábado. Java DayOfWeek: MONDAY=1, SUNDAY=7 -> map to 2=seg..7=dom->1
         int javaDay = date.getDayOfWeek().getValue();
         int dayOfWeek = javaDay == 7 ? 1 : javaDay + 1;
-        int bufferMinutes = settingsRepo.findFirstByOrderByCreatedAtAsc()
+        var settingsOpt = settingsRepo.findFirstByOrderByCreatedAtAsc();
+        int bufferMinutes = settingsOpt
                 .map(StudioSettingsEntity::getBufferMinutes)
                 .orElse(DEFAULT_BUFFER_MINUTES);
-        int slotMinutes = settingsRepo.findFirstByOrderByCreatedAtAsc()
+        int slotMinutes = settingsOpt
                 .map(StudioSettingsEntity::getSlotMinutes)
                 .orElse(DEFAULT_SLOT_MINUTES);
         int blockMinutes = service.getDurationMax() + bufferMinutes;
