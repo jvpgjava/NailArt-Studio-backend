@@ -24,15 +24,13 @@ public class FinanceService {
 
     @Transactional(readOnly = true)
     public FinanceDashboard getDashboard(LocalDate start, LocalDate end) {
-        List<AppointmentEntity> confirmed = appointmentRepo
-                .findByAppointmentDateBetweenOrderByAppointmentDateAscStartTimeAsc(start, end)
-                .stream()
+        List<AppointmentEntity> allInPeriod = appointmentRepo
+                .findByAppointmentDateBetweenOrderByAppointmentDateAscStartTimeAsc(start, end);
+
+        List<AppointmentEntity> confirmed = allInPeriod.stream()
                 .filter(a -> AppointmentStatus.CONFIRMED.name().equals(a.getStatus()))
                 .toList();
         long receitaEstimada = confirmed.stream().mapToLong(AppointmentEntity::getPriceCents).sum();
-
-        List<AppointmentEntity> allInPeriod = appointmentRepo
-                .findByAppointmentDateBetweenOrderByAppointmentDateAscStartTimeAsc(start, end);
         long perdasCancelamentos = allInPeriod.stream()
                 .filter(a -> AppointmentStatus.CANCELLED.name().equals(a.getStatus()))
                 .mapToLong(AppointmentEntity::getPriceCents)
