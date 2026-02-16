@@ -63,10 +63,6 @@ public class SchedulingService {
             priceCents += o.getPriceDeltaCents();
             durationMin += o.getDurationDeltaMin();
         }
-        int durationMax = service.getDurationMax();
-        for (ServiceOptionEntity o : options) {
-            durationMax += o.getDurationDeltaMin();
-        }
         LocalTime endTime = startTime.plusMinutes(durationMin);
 
         List<LocalTime> available = availabilityService.getAvailableSlots(employeeId, serviceId, appointmentDate);
