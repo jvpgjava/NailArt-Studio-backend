@@ -1,0 +1,541 @@
+{
+  "info": {
+    "name": "NailArt Studio API",
+    "description": "Collection da API REST do NailArt Studio.\n\n**Variáveis:**\n- `base_url`: ex. http://localhost:7550\n- `token`: preenchido automaticamente ao rodar \"Obter Token (Keycloak)\"\n- `keycloak_url`: ex. http://localhost:8081 (sem barra no final)\n- `keycloak_username` e `keycloak_password`: usuário do realm nailart\n\n**Auth:** Rode \"0. Auth (Keycloak) > Obter Token\" com usuário/senha do Keycloak; o token será salvo e usado nas pastas Cliente/Funcionário/Admin.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:7550" },
+    { "key": "token", "value": "" },
+    { "key": "keycloak_url", "value": "http://localhost:8081" },
+    { "key": "keycloak_username", "value": "" },
+    { "key": "keycloak_password", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "0. Auth (Keycloak)",
+      "description": "Obter JWT do Keycloak. Preencha keycloak_username e keycloak_password nas variáveis da collection e rode esta request; o token será salvo automaticamente.",
+      "item": [
+        {
+          "name": "Obter Token (Keycloak)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password" },
+                { "key": "client_id", "value": "nailart-backend" },
+                { "key": "username", "value": "{{keycloak_username}}" },
+                { "key": "password", "value": "{{keycloak_password}}" }
+              ]
+            },
+            "url": "{{keycloak_url}}/realms/nailart/protocol/openid-connect/token",
+            "description": "**URL do token (Keycloak):** {{keycloak_url}}/realms/nailart/protocol/openid-connect/token\n\nPreencha nas variáveis da collection: keycloak_username e keycloak_password (usuário criado no realm nailart). Após rodar, o access_token é salvo em 'token' e usado nas demais requests."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.access_token) {",
+                  "    pm.collectionVariables.set('token', json.access_token);",
+                  "    console.log('Token salvo na variável token');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Público",
+      "description": "Sem autenticação",
+      "item": [
+        {
+          "name": "Listar serviços ativos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/public/services",
+            "description": "Retorna serviços ativos com opções."
+          }
+        },
+        {
+          "name": "Listar funcionários por serviço",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/public/employees/by-service/{{serviceId}}",
+            "description": "Substitua {{serviceId}} por um UUID de GET /services."
+          }
+        },
+        {
+          "name": "Slots disponíveis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/public/availability?employeeId={{employeeId}}&serviceId={{serviceId}}&date=2025-02-15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "public", "availability"],
+              "query": [
+                { "key": "employeeId", "value": "{{employeeId}}" },
+                { "key": "serviceId", "value": "{{serviceId}}" },
+                { "key": "date", "value": "2025-02-15", "description": "YYYY-MM-DD" }
+              ]
+            },
+            "description": "Retorna horários de início possíveis (array de LocalTime)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Cliente",
+      "description": "Role: client. Header Authorization: Bearer {{token}}",
+      "item": [
+        {
+          "name": "Obter perfil",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/client/profile"
+          }
+        },
+        {
+          "name": "Atualizar perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Maria Cliente\",\n  \"phone\": \"11999999999\"\n}"
+            },
+            "url": "{{base_url}}/api/client/profile"
+          }
+        },
+        {
+          "name": "Criar agendamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeId\": \"{{employeeId}}\",\n  \"serviceId\": \"{{serviceId}}\",\n  \"appointmentDate\": \"2025-02-15\",\n  \"startTime\": \"10:00\",\n  \"optionIds\": []\n}"
+            },
+            "url": "{{base_url}}/api/client/appointments",
+            "description": "startTime deve estar em GET /api/public/availability."
+          }
+        },
+        {
+          "name": "Listar meus agendamentos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/client/appointments?from=2025-02-01&to=2025-02-28",
+              "host": ["{{base_url}}"],
+              "path": ["api", "client", "appointments"],
+              "query": [
+                { "key": "from", "value": "2025-02-01" },
+                { "key": "to", "value": "2025-02-28" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancelar agendamento",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/client/appointments/{{appointmentId}}/cancel",
+            "description": "Permitido até 6h antes do horário."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Funcionário",
+      "description": "Role: employee",
+      "item": [
+        {
+          "name": "Meus dados",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/employee/me"
+          }
+        },
+        {
+          "name": "Minha agenda",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/employee/agenda?date=2025-02-15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employee", "agenda"],
+              "query": [{ "key": "date", "value": "2025-02-15" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Admin - Serviços",
+      "description": "Role: manager ou admin",
+      "item": [
+        {
+          "name": "Listar todos os serviços",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/services"
+          }
+        },
+        {
+          "name": "Buscar serviço por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/services/{{serviceId}}"
+          }
+        },
+        {
+          "name": "Criar serviço",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Manicure\",\n  \"description\": \"Manicure completa\",\n  \"priceCents\": 5000,\n  \"durationMin\": 30,\n  \"durationMax\": 45\n}"
+            },
+            "url": "{{base_url}}/api/admin/services"
+          }
+        },
+        {
+          "name": "Atualizar serviço",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Manicure Premium\",\n  \"active\": true\n}"
+            },
+            "url": "{{base_url}}/api/admin/services/{{serviceId}}"
+          }
+        },
+        {
+          "name": "Excluir serviço",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/services/{{serviceId}}"
+          }
+        },
+        {
+          "name": "Listar opções do serviço",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/services/{{serviceId}}/options"
+          }
+        },
+        {
+          "name": "Adicionar opção",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alongamento\",\n  \"priceDeltaCents\": 1500,\n  \"durationDeltaMin\": 30\n}"
+            },
+            "url": "{{base_url}}/api/admin/services/{{serviceId}}/options"
+          }
+        },
+        {
+          "name": "Atualizar opção",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alongamento em gel\",\n  \"active\": true\n}"
+            },
+            "url": "{{base_url}}/api/admin/services/{{serviceId}}/options/{{optionId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Admin - Funcionários",
+      "description": "Role: manager ou admin",
+      "item": [
+        {
+          "name": "Listar funcionários",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/employees"
+          }
+        },
+        {
+          "name": "Buscar funcionário por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/employees/{{employeeId}}"
+          }
+        },
+        {
+          "name": "Criar funcionário",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Maria Silva\",\n  \"email\": \"maria@estudio.com\",\n  \"phone\": \"11988887777\",\n  \"serviceIds\": []\n}"
+            },
+            "url": "{{base_url}}/api/admin/employees"
+          }
+        },
+        {
+          "name": "Atualizar funcionário",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Maria Silva\",\n  \"active\": true,\n  \"serviceIds\": []\n}"
+            },
+            "url": "{{base_url}}/api/admin/employees/{{employeeId}}"
+          }
+        },
+        {
+          "name": "Excluir funcionário",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/employees/{{employeeId}}"
+          }
+        },
+        {
+          "name": "Listar disponibilidade",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/employees/{{employeeId}}/availability"
+          }
+        },
+        {
+          "name": "Adicionar disponibilidade",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dayOfWeek\": 2,\n  \"startTime\": \"09:00\",\n  \"endTime\": \"18:00\",\n  \"lunchBreak\": false\n}"
+            },
+            "url": "{{base_url}}/api/admin/employees/{{employeeId}}/availability"
+          }
+        },
+        {
+          "name": "Adicionar bloqueio",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"blockDate\": \"2025-02-20\",\n  \"startTime\": \"12:00\",\n  \"endTime\": \"13:00\",\n  \"reason\": \"Almoço\"\n}"
+            },
+            "url": "{{base_url}}/api/admin/employees/{{employeeId}}/blocks"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Admin - Agenda",
+      "description": "Role: manager ou admin",
+      "item": [
+        {
+          "name": "Agenda por dia",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/agenda?date=2025-02-15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "agenda"],
+              "query": [
+                { "key": "date", "value": "2025-02-15" },
+                { "key": "employeeId", "value": "", "disabled": true, "description": "Opcional: filtrar por funcionário" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Substituir funcionário",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newEmployeeId\": \"{{newEmployeeId}}\"\n}"
+            },
+            "url": "{{base_url}}/api/admin/agenda/appointments/{{appointmentId}}/substitute"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Admin - Financeiro",
+      "description": "Role: manager ou admin. Valores em centavos.",
+      "item": [
+        {
+          "name": "Dashboard financeiro",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/finance/dashboard?from=2025-02-01&to=2025-02-28",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "finance", "dashboard"],
+              "query": [
+                { "key": "from", "value": "2025-02-01" },
+                { "key": "to", "value": "2025-02-28" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar despesas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/admin/finance/expenses?from=2025-02-01&to=2025-02-28",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "finance", "expenses"],
+              "query": [
+                { "key": "from", "value": "2025-02-01" },
+                { "key": "to", "value": "2025-02-28" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar despesa",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"FIXED\",\n  \"amountCents\": 150000,\n  \"expenseDate\": \"2025-02-10\",\n  \"description\": \"Aluguel\"\n}"
+            },
+            "url": "{{base_url}}/api/admin/finance/expenses",
+            "description": "Categorias: FIXED, VARIABLE, MATERIALS, EMPLOYEES, OTHER"
+          }
+        },
+        {
+          "name": "Atualizar despesa",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amountCents\": 160000,\n  \"description\": \"Aluguel + IPTU\"\n}"
+            },
+            "url": "{{base_url}}/api/admin/finance/expenses/{{expenseId}}"
+          }
+        },
+        {
+          "name": "Excluir despesa",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/finance/expenses/{{expenseId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Admin - Usuários",
+      "description": "Role: admin. Listar/bloquear clientes.",
+      "item": [
+        {
+          "name": "Listar clientes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/users"
+          }
+        },
+        {
+          "name": "Buscar cliente por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{base_url}}/api/admin/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Bloquear cliente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"blocked\": true\n}"
+            },
+            "url": "{{base_url}}/api/admin/users/{{userId}}/block"
+          }
+        }
+      ]
+    }
+  ]
+}
